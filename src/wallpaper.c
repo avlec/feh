@@ -45,7 +45,7 @@ static unsigned char timeout = 0;
  */
 static char e17_fake_ipc = 0;
 
-void feh_wm_set_bg_filelist(unsigned char bgmode)
+void feh_wm_set_bg_filelist(unsigned char bg_mode)
 {
 	if (filelist_len == 0)
 		eprintf("No files specified for background setting");
