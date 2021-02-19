@@ -365,7 +365,7 @@ void feh_wm_gen_bg_script(char* fil, int centered, int scaled, int filled, int u
 		free(exec_method);
 }
 
-unsigned char* feh_wm_retrieve_root_pixmap(Display* disp, Window root) {
+unsigned char* feh_wm_get_root_pmap(Display* disp, Window root) {
 	Atom _discard1;
 	int _discard2;
 	unsigned long _discard3;
@@ -379,11 +379,11 @@ unsigned char* feh_wm_retrieve_root_pixmap(Display* disp, Window root) {
 						   &_discard1, &_discard2, &_discard3, &_discard3,
 						   &data) == Success) {
 		if (data) {
-			D(("preserving background"));
+			D(("preserving background\n"));
 			return data;
 		}
 	}
-	D(("unable to preserve background"));
+	D(("unable to preserve background\n"));
 	return NULL;
 }
 
