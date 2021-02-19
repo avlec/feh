@@ -1218,31 +1218,31 @@ void feh_menu_cb(feh_menu * m, feh_menu_item * i, int action, unsigned short dat
 	switch (action) {
 		case CB_BG_TILED:
 			path = FEH_FILE(m->fehwin->file->data)->filename;
-			feh_wm_set_bg(path, m->fehwin->im, 0, 0, 0, data, 0);
+			feh_wm_set_bg(path, m->fehwin->im, BG_MODE_TILE, data, 0);
 			break;
 		case CB_BG_SCALED:
 			path = FEH_FILE(m->fehwin->file->data)->filename;
-			feh_wm_set_bg(path, m->fehwin->im, 0, 1, 0, data, 0);
+			feh_wm_set_bg(path, m->fehwin->im, BG_MODE_SCALE, data, 0);
 			break;
 		case CB_BG_CENTERED:
 			path = FEH_FILE(m->fehwin->file->data)->filename;
-			feh_wm_set_bg(path, m->fehwin->im, 1, 0, 0, data, 0);
+			feh_wm_set_bg(path, m->fehwin->im, BG_MODE_CENTER, data, 0);
 			break;
 		case CB_BG_FILLED:
 			path = FEH_FILE(m->fehwin->file->data)->filename;
-			feh_wm_set_bg(path, m->fehwin->im, 0, 0, 1, data, 0);
+			feh_wm_set_bg(path, m->fehwin->im, BG_MODE_FILL, data, 0);
 			break;
 		case CB_BG_TILED_NOFILE:
-			feh_wm_set_bg(NULL, m->fehwin->im, 0, 0, 0, data, 0);
+			feh_wm_set_bg(NULL, m->fehwin->im, BG_MODE_TILE, data, 0);
 			break;
 		case CB_BG_SCALED_NOFILE:
-			feh_wm_set_bg(NULL, m->fehwin->im, 0, 1, 0, data, 0);
+			feh_wm_set_bg(NULL, m->fehwin->im, BG_MODE_SCALE, data, 0);
 			break;
 		case CB_BG_CENTERED_NOFILE:
-			feh_wm_set_bg(NULL, m->fehwin->im, 1, 0, 0, data, 0);
+			feh_wm_set_bg(NULL, m->fehwin->im, BG_MODE_CENTER, data, 0);
 			break;
 		case CB_BG_FILLED_NOFILE:
-			feh_wm_set_bg(NULL, m->fehwin->im, 0, 0, 1, data, 0);
+			feh_wm_set_bg(NULL, m->fehwin->im, BG_MODE_FILL, data, 0);
 			break;
 		case CB_CLOSE:
 			winwidget_destroy(m->fehwin);

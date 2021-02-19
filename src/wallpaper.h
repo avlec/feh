@@ -47,8 +47,8 @@ extern void enl_ipc_send(char *);
 extern char *enl_wait_for_reply(void);
 extern char *enl_ipc_get(const char *);
 extern char *enl_send_and_wait(char *);
-extern void feh_wm_set_bg(char *fil, Imlib_Image im, int centered, int scaled,
-		int fill, int desktop, int for_screen);
+extern void feh_wm_set_bg(char *fil, Imlib_Image im, unsigned char bg_mode,
+                          int desktop, int for_screen);
 extern int feh_wm_get_num_desks(void);
 extern signed char feh_wm_get_wm_is_e(void);
 void feh_wm_set_bg_filelist(unsigned char bgmode);

@@ -50,23 +50,7 @@ void feh_wm_set_bg_filelist(unsigned char bg_mode)
 	if (filelist_len == 0)
 		eprintf("No files specified for background setting");
 
-	switch (bgmode) {
-		case BG_MODE_TILE:
-			feh_wm_set_bg(NULL, NULL, 0, 0, 0, 0, 1);
-			break;
-		case BG_MODE_SCALE:
-			feh_wm_set_bg(NULL, NULL, 0, 1, 0, 0, 1);
-			break;
-		case BG_MODE_FILL:
-			feh_wm_set_bg(NULL, NULL, 0, 0, 1, 0, 1);
-			break;
-		case BG_MODE_MAX:
-			feh_wm_set_bg(NULL, NULL, 0, 0, 2, 0, 1);
-			break;
-		default:
-			feh_wm_set_bg(NULL, NULL, 1, 0, 0, 0, 1);
-			break;
-	}
+	feh_wm_set_bg(NULL, NULL, bg_mode, 0, 1);
 }
 
 static void feh_wm_load_next(Imlib_Image *im)
@@ -269,7 +253,7 @@ static void feh_wm_set_bg_maxed(Pixmap pmap, Imlib_Image im, int use_filelist,
 ** Creates a script that can be used to create the same background
 ** as the last time the program was called.
 */
-void feh_wm_gen_bg_script(char* fil, int centered, int scaled, int filled, int use_filelist) {
+void feh_wm_gen_bg_script(char* fil, unsigned char bg_mode, int use_filelist) {
 	char * home = getenv("HOME");
 
 	if (!home)
@@ -296,16 +280,26 @@ void feh_wm_gen_bg_script(char* fil, int centered, int scaled, int filled, int u
 		fputs("#!/bin/sh\n", fp);
 		fputs(exec_method, fp);
 		fputs(" --no-fehbg --bg-", fp);
-		if (centered)
-			fputs("center", fp);
-		else if (scaled)
-			fputs("scale", fp);
-		else if (filled == 1)
-			fputs("fill", fp);
-		else if (filled == 2)
-			fputs("max", fp);
-		else
-			fputs("tile", fp);
+
+		switch (bg_mode) {
+			default:
+			case BG_MODE_CENTER:
+				fputs("center", fp);
+				break;
+			case BG_MODE_SCALE:
+				fputs("scale", fp);
+				break;
+			case BG_MODE_FILL:
+				fputs("fill", fp);
+				break;
+			case BG_MODE_MAX:
+				fputs("max", fp);
+				break;
+			case BG_MODE_TILE:
+				fputs("tile", fp);
+				break;
+		}
+
 		if (opt.image_bg) {
 			fputs(" --image-bg ", fp);
 			fputs(shell_escape(opt.image_bg), fp);
@@ -387,8 +381,7 @@ unsigned char* feh_wm_get_root_pmap(Display* disp, Window root) {
 	return NULL;
 }
 
-void feh_wm_set_bg(char *fil, Imlib_Image im, int centered, int scaled,
-		int filled, int desktop, int use_filelist)
+void feh_wm_set_bg(char *fil, Imlib_Image im, unsigned char bg_mode, int desktop, int use_filelist)
 {
 	XGCValues gcvalues;
 	XGCValues gcval;
@@ -427,31 +420,35 @@ void feh_wm_set_bg(char *fil, Imlib_Image im, int centered, int scaled,
 		snprintf(sendbuf, sizeof(sendbuf), "background %s bg.file %s", bgname, fil);
 		enl_ipc_send(sendbuf);
 
-		if (scaled) {
-			snprintf(sendbuf, sizeof(sendbuf), "background %s bg.solid 0 0 0", bgname);
-			enl_ipc_send(sendbuf);
-			snprintf(sendbuf, sizeof(sendbuf), "background %s bg.tile 0", bgname);
-			enl_ipc_send(sendbuf);
-			snprintf(sendbuf, sizeof(sendbuf), "background %s bg.xjust 512", bgname);
-			enl_ipc_send(sendbuf);
-			snprintf(sendbuf, sizeof(sendbuf), "background %s bg.yjust 512", bgname);
-			enl_ipc_send(sendbuf);
-			snprintf(sendbuf, sizeof(sendbuf), "background %s bg.xperc 1024", bgname);
-			enl_ipc_send(sendbuf);
-			snprintf(sendbuf, sizeof(sendbuf), "background %s bg.yperc 1024", bgname);
-			enl_ipc_send(sendbuf);
-		} else if (centered) {
-			snprintf(sendbuf, sizeof(sendbuf), "background %s bg.solid 0 0 0", bgname);
-			enl_ipc_send(sendbuf);
-			snprintf(sendbuf, sizeof(sendbuf), "background %s bg.tile 0", bgname);
-			enl_ipc_send(sendbuf);
-			snprintf(sendbuf, sizeof(sendbuf), "background %s bg.xjust 512", bgname);
-			enl_ipc_send(sendbuf);
-			snprintf(sendbuf, sizeof(sendbuf), "background %s bg.yjust 512", bgname);
-			enl_ipc_send(sendbuf);
-		} else {
-			snprintf(sendbuf, sizeof(sendbuf), "background %s bg.tile 1", bgname);
-			enl_ipc_send(sendbuf);
+		switch (bg_mode) {
+			case BG_MODE_SCALE:
+				snprintf(sendbuf, sizeof(sendbuf), "background %s bg.solid 0 0 0", bgname);
+				enl_ipc_send(sendbuf);
+				snprintf(sendbuf, sizeof(sendbuf), "background %s bg.tile 0", bgname);
+				enl_ipc_send(sendbuf);
+				snprintf(sendbuf, sizeof(sendbuf), "background %s bg.xjust 512", bgname);
+				enl_ipc_send(sendbuf);
+				snprintf(sendbuf, sizeof(sendbuf), "background %s bg.yjust 512", bgname);
+				enl_ipc_send(sendbuf);
+				snprintf(sendbuf, sizeof(sendbuf), "background %s bg.xperc 1024", bgname);
+				enl_ipc_send(sendbuf);
+				snprintf(sendbuf, sizeof(sendbuf), "background %s bg.yperc 1024", bgname);
+				enl_ipc_send(sendbuf);
+				break;
+			case BG_MODE_CENTER:
+				snprintf(sendbuf, sizeof(sendbuf), "background %s bg.solid 0 0 0", bgname);
+				enl_ipc_send(sendbuf);
+				snprintf(sendbuf, sizeof(sendbuf), "background %s bg.tile 0", bgname);
+				enl_ipc_send(sendbuf);
+				snprintf(sendbuf, sizeof(sendbuf), "background %s bg.xjust 512", bgname);
+				enl_ipc_send(sendbuf);
+				snprintf(sendbuf, sizeof(sendbuf), "background %s bg.yjust 512", bgname);
+				enl_ipc_send(sendbuf);
+				break;
+			default:
+				snprintf(sendbuf, sizeof(sendbuf), "background %s bg.tile 1", bgname);
+				enl_ipc_send(sendbuf);
+				break;
 		}
 
 		snprintf(sendbuf, sizeof(sendbuf), "use_bg %s %d", bgname, desktop);
@@ -463,7 +460,6 @@ void feh_wm_set_bg(char *fil, Imlib_Image im, int centered, int scaled,
 		unsigned long length, after;
 		unsigned char *data_root = NULL, *data_esetroot = NULL;
 		Pixmap pmap_d1, pmap_d2;
-		unsigned int pmap_d1_freeable = 0;
 
 		/* local display to set closedownmode on */
 		Display *disp2;
@@ -480,52 +476,61 @@ void feh_wm_set_bg(char *fil, Imlib_Image im, int centered, int scaled,
 		else
 			XAllocNamedColor(disp, cmap, "black", &color, &color);
 
-		if (scaled) {
+		unsigned int bg_preserved = 0;
+
+		if (!opt.bg_preserve) {
 			pmap_d1 = XCreatePixmap(disp, root, scr->width, scr->height, depth);
-
-#ifdef HAVE_LIBXINERAMA
-			if (opt.xinerama_index >= 0) {
-				gcval.foreground = color.pixel;
-				gc = XCreateGC(disp, root, GCForeground, &gcval);
-				XFillRectangle(disp, pmap_d1, gc, 0, 0, scr->width, scr->height);
-				XFreeGC(disp, gc);
-			}
-
-			if (opt.xinerama && xinerama_screens) {
-				for (i = 0; i < num_xinerama_screens; i++) {
-					if (opt.xinerama_index < 0 || opt.xinerama_index == i) {
-						feh_wm_set_bg_scaled(pmap_d1, im, use_filelist,
-							xinerama_screens[i].x_org, xinerama_screens[i].y_org,
-							xinerama_screens[i].width, xinerama_screens[i].height);
-					}
-				}
-			}
-			else
-#endif			/* HAVE_LIBXINERAMA */
-				feh_wm_set_bg_scaled(pmap_d1, im, use_filelist,
-					0, 0, scr->width, scr->height);
-		} else if (centered) {
-
-			D(("centering\n"));
-
-
-
-			unsigned char *data = NULL;
-			if (opt.bg_preserve) {
-				data = feh_wm_retrieve_root_pixmap(disp, root);
-			}
-
-			// if bg_preserve wasn't run or bg_preserve found no existing background
-			if (!data) {
-				pmap_d1 = XCreatePixmap(disp, root, scr->width, scr->height, depth);
-				gcval.foreground = color.pixel;
-				gc = XCreateGC(disp, root, GCForeground, &gcval);
-				XFillRectangle(disp, pmap_d1, gc, 0, 0, scr->width, scr->height);
-				pmap_d1_freeable = 1;
-			} else {
+		} else {
+			unsigned char* data = feh_wm_get_root_pmap(disp, root);
+			if (data != NULL) {
 				pmap_d1 = *((Pixmap*) data);
+				bg_preserved = 1;
 				XFree(data);
 			}
+		}
+
+		switch(bg_mode) {
+			case BG_MODE_SCALE:
+				D(("bg-scale\n"));
+
+#ifdef HAVE_LIBXINERAMA
+				if (opt.xinerama_index >= 0) {
+					gcval.foreground = color.pixel;
+					gc = XCreateGC(disp, root, GCForeground, &gcval);
+					XFillRectangle(disp, pmap_d1, gc, 0, 0, scr->width, scr->height);
+					XFreeGC(disp, gc);
+				}
+
+				if (opt.xinerama && xinerama_screens) {
+					for (i = 0; i < num_xinerama_screens; i++) {
+						if (opt.xinerama_index < 0 || opt.xinerama_index == i) {
+							feh_wm_set_bg_scaled(pmap_d1, im, use_filelist,
+												 xinerama_screens[i].x_org, xinerama_screens[i].y_org,
+												 xinerama_screens[i].width, xinerama_screens[i].height);
+						}
+					}
+				} else {
+					feh_wm_set_bg_scaled(pmap_d1, im, use_filelist,
+										 0, 0, scr->width, scr->height);
+				}
+				/* HAVE_LIBXINERAMA */
+#else
+				/* NO LIBXINERAMA */
+				feh_wm_set_bg_scaled(pmap_d1, im, use_filelist,
+									 0, 0, scr->width, scr->height);
+#endif  /* NO LIBXINERAMA */
+				break;
+			default:
+				D(("warning, default background mode encountered"))
+			case BG_MODE_CENTER:
+				D(("bg-center\n"));
+
+				if(!bg_preserved) {
+					gcval.foreground = color.pixel;
+					gc = XCreateGC(disp, root, GCForeground, &gcval);
+					XFillRectangle(disp, pmap_d1, gc, 0, 0, scr->width, scr->height);
+					XFreeGC(disp, gc);
+				}
 
 #ifdef HAVE_LIBXINERAMA
 			if (opt.xinerama && xinerama_screens) {
@@ -536,18 +541,19 @@ void feh_wm_set_bg(char *fil, Imlib_Image im, int centered, int scaled,
 							xinerama_screens[i].width, xinerama_screens[i].height);
 					}
 				}
-			}
-			else
-#endif				/* HAVE_LIBXINERAMA */
+			} else {
 				feh_wm_set_bg_centered(pmap_d1, im, use_filelist,
-					0, 0, scr->width, scr->height);
-
-			if (!data)
-				XFreeGC(disp, gc);
-
-		} else if (filled == 1) {
-
-			pmap_d1 = XCreatePixmap(disp, root, scr->width, scr->height, depth);
+									   0, 0, scr->width, scr->height);
+			}
+		/* HAVE_LIBXINERAMA */
+#else
+	    /* NO LIBXINERAMA */
+			feh_wm_set_bg_centered(pmap_d1, im, use_filelist,
+								   0, 0, scr->width, scr->height);
+#endif  /* NO LIBXINERAMA */
+				break;
+			case BG_MODE_FILL:
+				D(("bg-fill\n"));
 
 #ifdef HAVE_LIBXINERAMA
 			if (opt.xinerama_index >= 0) {
@@ -565,47 +571,66 @@ void feh_wm_set_bg(char *fil, Imlib_Image im, int centered, int scaled,
 							xinerama_screens[i].width, xinerama_screens[i].height);
 					}
 				}
+			} else {
+				feh_wm_set_bg_filled(pmap_d1, im, use_filelist,
+									 0, 0, scr->width, scr->height);
 			}
-			else
-#endif				/* HAVE_LIBXINERAMA */
-				feh_wm_set_bg_filled(pmap_d1, im, use_filelist
-					, 0, 0, scr->width, scr->height);
+		/* HAVE_LIBXINERAMA */
+#else
+	    /* NO LIBXINERAMA */
+			feh_wm_set_bg_filled(pmap_d1, im, use_filelist,
+								 0, 0, scr->width, scr->height);
+#endif  /* NO LIBXINERAMA */
+				break;
+			case BG_MODE_MAX:
+				D(("bg-max\n"));
 
-		} else if (filled == 2) {
-
-			pmap_d1 = XCreatePixmap(disp, root, scr->width, scr->height, depth);
-			gcval.foreground = color.pixel;
-			gc = XCreateGC(disp, root, GCForeground, &gcval);
-			XFillRectangle(disp, pmap_d1, gc, 0, 0, scr->width, scr->height);
+				if(!bg_preserved) {
+					gcval.foreground = color.pixel;
+					gc = XCreateGC(disp, root, GCForeground, &gcval);
+					XFillRectangle(disp, pmap_d1, gc, 0, 0, scr->width, scr->height);
+					XFreeGC(disp, gc);
+				}
 
 #ifdef HAVE_LIBXINERAMA
-			if (opt.xinerama && xinerama_screens) {
-				for (i = 0; i < num_xinerama_screens; i++) {
-					if (opt.xinerama_index < 0 || opt.xinerama_index == i) {
-						feh_wm_set_bg_maxed(pmap_d1, im, use_filelist,
-							xinerama_screens[i].x_org, xinerama_screens[i].y_org,
-							xinerama_screens[i].width, xinerama_screens[i].height);
+				if (opt.xinerama && xinerama_screens) {
+					for (i = 0; i < num_xinerama_screens; i++) {
+						if (opt.xinerama_index < 0 || opt.xinerama_index == i) {
+							feh_wm_set_bg_maxed(pmap_d1, im, use_filelist,
+												xinerama_screens[i].x_org, xinerama_screens[i].y_org,
+												xinerama_screens[i].width, xinerama_screens[i].height);
+						}
 					}
+				} else {
+					feh_wm_set_bg_maxed(pmap_d1, im, use_filelist,
+										0, 0, scr->width, scr->height);
 				}
-			}
-			else
-#endif				/* HAVE_LIBXINERAMA */
+				/* HAVE_LIBXINERAMA */
+#else
+				/* NO LIBXINERAMA */
 				feh_wm_set_bg_maxed(pmap_d1, im, use_filelist,
-					0, 0, scr->width, scr->height);
+									0, 0, scr->width, scr->height);
+#endif  /* NO LIBXINERAMA */
 
-			XFreeGC(disp, gc);
 
-		} else {
-			if (use_filelist)
-				feh_wm_load_next(&im);
-			w = gib_imlib_image_get_width(im);
-			h = gib_imlib_image_get_height(im);
-			pmap_d1 = XCreatePixmap(disp, root, w, h, depth);
-			gib_imlib_render_image_on_drawable(pmap_d1, im, 0, 0, 1, 1, 0);
+				break;
+			case BG_MODE_TILE:
+				D(("bg-tile\n"));
+
+				// hack solution to get correct pixmap size.
+				XFreePixmap(disp, pmap_d1);
+
+				if (use_filelist)
+					feh_wm_load_next(&im);
+				w = gib_imlib_image_get_width(im);
+				h = gib_imlib_image_get_height(im);
+				pmap_d1 = XCreatePixmap(disp, root, w, h, depth);
+				gib_imlib_render_image_on_drawable(pmap_d1, im, 0, 0, 1, 1, 0);
+				break;
 		}
 
 		if (!opt.no_fehbg)
-			feh_wm_gen_bg_script(fil, centered, scaled, filled, use_filelist);
+			feh_wm_gen_bg_script(fil, bg_mode, use_filelist);
 
 		/* create new display, copy pixmap to new display */
 		disp2 = XOpenDisplay(NULL);
@@ -622,7 +647,7 @@ void feh_wm_set_bg(char *fil, Imlib_Image im, int centered, int scaled,
 		XFreeGC(disp2, gc);
 		XSync(disp2, False);
 		XSync(disp, False);
-		if(pmap_d1_freeable)
+		if(!bg_preserved)
 			XFreePixmap(disp, pmap_d1);
 
 		prop_root = XInternAtom(disp2, "_XROOTPMAP_ID", True);
