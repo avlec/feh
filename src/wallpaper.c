@@ -365,6 +365,28 @@ void feh_wm_gen_bg_script(char* fil, int centered, int scaled, int filled, int u
 		free(exec_method);
 }
 
+unsigned char* feh_wm_retrieve_root_pixmap(Display* disp, Window root) {
+	Atom _discard1;
+	int _discard2;
+	unsigned long _discard3;
+	Atom _XROOTPMAP_ID;
+
+	unsigned char* data = NULL;
+
+	_XROOTPMAP_ID = XInternAtom(disp, "_XROOTPMAP_ID", False);
+
+	if (XGetWindowProperty(disp, root, _XROOTPMAP_ID, 0, 1, False, XA_PIXMAP,
+						   &_discard1, &_discard2, &_discard3, &_discard3,
+						   &data) == Success) {
+		if (data) {
+			D(("preserving background"));
+			return data;
+		}
+	}
+	D(("unable to preserve background"));
+	return NULL;
+}
+
 void feh_wm_set_bg(char *fil, Imlib_Image im, int centered, int scaled,
 		int filled, int desktop, int use_filelist)
 {
@@ -490,26 +512,7 @@ void feh_wm_set_bg(char *fil, Imlib_Image im, int centered, int scaled,
 
 			unsigned char *data = NULL;
 			if (opt.bg_preserve) {
-				Atom act_type;
-				int act_format;
-				unsigned long nitems, bytes_after;
-				Atom _XROOTPMAP_ID;
-
-				_XROOTPMAP_ID = XInternAtom(disp, "_XROOTPMAP_ID", False);
-
-				if (XGetWindowProperty(disp, root, _XROOTPMAP_ID, 0, 1, False, XA_PIXMAP,
-									   &act_type, &act_format, &nitems, &bytes_after,
-									   &data) == Success) {
-					if (data) {
-						D(("preserving background\n"));
-						pmap_d1 = *((Pixmap *) data);
-						XFree(data);
-					}
-				} else {
-					// XOrg documentation is not clear if a non-success event can
-					// set data.
-					data = NULL;
-				}
+				data = feh_wm_retrieve_root_pixmap(disp, root);
 			}
 
 			// if bg_preserve wasn't run or bg_preserve found no existing background
@@ -519,6 +522,9 @@ void feh_wm_set_bg(char *fil, Imlib_Image im, int centered, int scaled,
 				gc = XCreateGC(disp, root, GCForeground, &gcval);
 				XFillRectangle(disp, pmap_d1, gc, 0, 0, scr->width, scr->height);
 				pmap_d1_freeable = 1;
+			} else {
+				pmap_d1 = *((Pixmap*) data);
+				XFree(data);
 			}
 
 #ifdef HAVE_LIBXINERAMA
